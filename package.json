@@ -1,0 +1,32 @@
+{
+  "name": "@spranclabs/flowmark-monorepo",
+  "version": "1.0.0",
+  "description": "Flowmark - Cross-browser highlighting library that flows across boundaries",
+  "private": true,
+  "author": "Spranc Labs (Gabriel Ocampo)",
+  "license": "MIT",
+  "packageManager": "pnpm@10.6.1",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "turbo run build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "turbo": "^1.13.0",
+    "typescript": "^5.4.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ]
+}

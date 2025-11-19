@@ -1,0 +1,53 @@
+{
+  "name": "@spranclabs/flowmark",
+  "version": "0.1.0",
+  "description": "Flowmark - Zero-dependency highlighting library with cross-element selection",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "flowmark",
+    "highlighting",
+    "cross-element",
+    "web-highlighting",
+    "browser-extension",
+    "iframe",
+    "vanilla-js",
+    "zero-dependencies",
+    "text-selection"
+  ],
+  "author": "Spranc Labs (Gabriel Ocampo)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Spranc-Labs/flowmark.git",
+    "directory": "packages/core"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^27.0.0",
+    "@types/node": "^20.11.0",
+    "jsdom": "^27.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

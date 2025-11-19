@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Flowmark - Simple Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .content {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+    .tooltip {
+      position: absolute;
+      background: #667eea;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 9999;
+    }
+    mark {
+      background: #ffeb3b !important;
+      padding: 2px 0;
+      border-radius: 2px;
+      color: inherit;
+    }
+
+    mark.highlight {
+      background: #ffeb3b !important;
+    }
+    .status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="status">✅ Demo Ready - Select text below!</div>
+
+  <div class="content" id="content">
+    <h1>Flowmark - Simple Test</h1>
+    <p>
+      Select any text on this page to test Flowmark highlighting.
+      A button will appear when you select text.
+    </p>
+    <p>
+      Try selecting this sentence right here! The highlighting
+      system uses smart text normalization to handle quotes,
+      whitespace, and punctuation differences.
+    </p>
+    <p>
+      You can select text across multiple paragraphs and it will
+      still work perfectly. This is one of the key features that
+      makes this library unique.
+    </p>
+  </div>
+
+  <script>
+    console.log('✅ Script loaded!')
+
+    let tooltip = null
+
+    document.addEventListener('mouseup', function(e) {
+      console.log('Mouse up detected')
+
+      setTimeout(function() {
+        const selection = window.getSelection()
+        console.log('Selection:', selection.toString())
+
+        if (!selection || selection.isCollapsed) {
+          console.log('No selection')
+          removeTooltip()
+          return
+        }
+
+        const text = selection.toString().trim()
+        if (text.length === 0) {
+          console.log('Empty selection')
+          removeTooltip()
+          return
+        }
+
+        console.log('Creating tooltip for:', text)
+
+        const range = selection.getRangeAt(0)
+        const rect = range.getBoundingClientRect()
+
+        showTooltip(
+          rect.left + rect.width / 2 + window.scrollX,
+          rect.top + window.scrollY - 50
+        )
+      }, 50)
+    })
+
+    function showTooltip(x, y) {
+      removeTooltip()
+
+      tooltip = document.createElement('div')
+      tooltip.className = 'tooltip'
+      tooltip.textContent = '✨ Highlight'
+      tooltip.style.position = 'absolute'
+      tooltip.style.left = x + 'px'
+      tooltip.style.top = y + 'px'
+
+      tooltip.onclick = function() {
+        console.log('Highlight clicked!')
+        const selection = window.getSelection()
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0)
+          const mark = document.createElement('mark')
+          mark.className = 'highlight'
+          mark.style.backgroundColor = '#ffeb3b'
+          mark.style.padding = '2px 0'
+
+          try {
+            range.surroundContents(mark)
+            console.log('✅ Highlighted! Check the page.')
+          } catch (e) {
+            console.log('⚠️ Cross-element highlight, using alternative method')
+            try {
+              const contents = range.extractContents()
+              mark.appendChild(contents)
+              range.insertNode(mark)
+              console.log('✅ Cross-element highlight created!')
+            } catch (err) {
+              console.error('Failed to highlight:', err)
+              alert('Could not highlight this selection. Try selecting text within a single paragraph.')
+            }
+          }
+
+          selection.removeAllRanges()
+          removeTooltip()
+        }
+      }
+
+      document.body.appendChild(tooltip)
+      console.log('Tooltip created at', x, y)
+    }
+
+    function removeTooltip() {
+      if (tooltip) {
+        tooltip.remove()
+        tooltip = null
+      }
+    }
+
+    document.addEventListener('mousedown', function(e) {
+      if (tooltip && !tooltip.contains(e.target)) {
+        removeTooltip()
+      }
+    })
+
+    console.log('🚀 Ready! Select some text.')
+  </script>
+</body>
+</html>

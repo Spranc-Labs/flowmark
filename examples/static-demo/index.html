@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flowmark Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fafafa;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 12px;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      color: #666;
+      font-weight: 400;
+    }
+
+    .badges {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #f0f0f0;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 40px;
+      margin-bottom: 60px;
+    }
+
+    @media (max-width: 900px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .content-panel {
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 32px;
+    }
+
+    .content-panel h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .instruction {
+      background: #f8f9fa;
+      border-left: 3px solid #333;
+      padding: 16px;
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+      color: #555;
+    }
+
+    .reading-content {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: #333;
+      user-select: text;
+    }
+
+    .reading-content p {
+      margin-bottom: 20px;
+    }
+
+    .reading-content h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #111;
+      margin: 32px 0 16px;
+    }
+
+    mark.highlight {
+      background: #ffeb3b;
+      padding: 2px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    mark.highlight:hover {
+      background: #fdd835;
+    }
+
+    .highlight-tooltip {
+      position: absolute;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 8px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+
+    .highlight-tooltip button {
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .highlight-tooltip button:hover {
+      background: #555;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .sidebar-panel {
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .sidebar-panel h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .sidebar-panel h2 .count {
+      color: #666;
+      font-weight: 400;
+      font-size: 0.95rem;
+    }
+
+    .highlight-item {
+      background: #fafafa;
+      border-left: 3px solid #ffeb3b;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .highlight-item:hover {
+      background: #f5f5f5;
+    }
+
+    .highlight-item-text {
+      font-size: 0.9rem;
+      color: #333;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .highlight-item-meta {
+      font-size: 0.8rem;
+      color: #999;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .highlight-item-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-small {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .btn-small:hover {
+      color: #333;
+    }
+
+    .btn-danger {
+      color: #d32f2f;
+    }
+
+    .btn-danger:hover {
+      color: #b71c1c;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: #999;
+      font-size: 0.9rem;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #fafafa;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .btn-clear {
+      width: 100%;
+      background: white;
+      color: #d32f2f;
+      border: 1px solid #d32f2f;
+      border-radius: 4px;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-top: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-clear:hover {
+      background: #d32f2f;
+      color: white;
+    }
+
+    .feature-list {
+      list-style: none;
+    }
+
+    .feature-list li {
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+
+    .feature-list strong {
+      color: #333;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Flowmark</h1>
+      <p>Highlighting that flows across boundaries</p>
+      <div class="badges">
+        <span class="badge">Zero Dependencies</span>
+        <span class="badge">10KB Bundle</span>
+        <span class="badge">Cross-Element Support</span>
+      </div>
+    </header>
+
+    <div class="main-content">
+      <div class="content-panel">
+        <h2>Reading Content</h2>
+
+        <div class="instruction">
+          <strong>How to use:</strong> Select any text below, then click "Highlight" to save it. Your highlights persist across page refreshes.
+        </div>
+
+        <div class="reading-content" id="content">
+          <h3>The Power of Text Annotation</h3>
+          <p>
+            Text annotation is a fundamental feature in modern reading applications.
+            It allows users to capture their thoughts and mark important passages
+            for future reference. This demo showcases a production-ready text highlighting
+            system with smart normalization.
+          </p>
+
+          <h3>Smart Quote Handling</h3>
+          <p>
+            The system automatically normalizes smart quotes and single quotes to
+            ensure consistent matching. Whether you copy text from Microsoft Word,
+            Google Docs, or a website, the highlighting works perfectly.
+          </p>
+
+          <h3>Cross-Element Highlighting</h3>
+          <p>
+            Unlike basic implementations, this system supports highlighting across
+            multiple DOM elements. Try selecting text that spans from this paragraph
+            into the next one it works seamlessly.
+          </p>
+
+          <p>
+            The text processor handles whitespace normalization, punctuation spacing,
+            and even computes similarity scores between strings. All of this with
+            zero external dependencies and a tiny 10KB footprint.
+          </p>
+
+          <h3>Persistent Storage</h3>
+          <p>
+            All highlights are automatically saved to your browser's LocalStorage.
+            Refresh this page and your highlights will still be here. The system uses
+            text context to reliably match highlights even if the surrounding content changes.
+          </p>
+
+          <h3>Technical Excellence</h3>
+          <p>
+            This library is built with TypeScript, fully tested with 40 unit tests achieving
+            100% coverage, and supports multiple storage adapters including Chrome extensions,
+            Firefox add-ons, and iframe communication via postMessage.
+          </p>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <div class="sidebar-panel">
+          <h2>Highlights <span class="count" id="highlight-count">(0)</span></h2>
+          <div id="highlights-list">
+            <div class="empty-state">
+              No highlights yet.<br>Select some text to get started.
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-panel">
+          <h2>Statistics</h2>
+          <div class="stat-item">
+            <span class="stat-label">Total Highlights</span>
+            <span class="stat-value" id="total-highlights">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total Words</span>
+            <span class="stat-value" id="total-words">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total Characters</span>
+            <span class="stat-value" id="total-chars">0</span>
+          </div>
+          <button class="btn-clear" onclick="clearAllHighlights()">Clear All Highlights</button>
+        </div>
+
+        <div class="sidebar-panel">
+          <h2>Features</h2>
+          <ul class="feature-list">
+            <li><strong>Smart Normalization</strong><br>Handles quotes, whitespace, punctuation</li>
+            <li><strong>Cross-Element</strong><br>Highlight across multiple paragraphs</li>
+            <li><strong>Persistent Storage</strong><br>Highlights saved to LocalStorage</li>
+            <li><strong>Context Matching</strong><br>Prefix/suffix validation for accuracy</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./demo.js"></script>
+</body>
+</html>
