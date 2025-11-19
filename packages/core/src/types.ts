@@ -115,6 +115,12 @@ export interface SelectionData {
   /** End offset within container */
   endOffset: number
 
+  /** Text context before selection (normalized) */
+  prefix: string
+
+  /** Text context after selection (normalized) */
+  suffix: string
+
   /** Whether selection spans multiple elements */
   isCrossElement: boolean
 }
@@ -197,6 +203,9 @@ export interface SelectionUIComponent {
 
   /** Clean up resources */
   destroy(): void
+
+  /** Register callback for when user requests a highlight */
+  onHighlight(callback: (selection: SelectionData) => void): void
 }
 
 /**
