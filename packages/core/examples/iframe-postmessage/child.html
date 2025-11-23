@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flowmark - Iframe Content</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 30px;
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    h1 { color: #2563eb; }
+
+    .content {
+      font-size: 16px;
+    }
+
+    mark.highlight {
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    mark.highlight:hover {
+      opacity: 0.7;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    .status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #10b981;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="status">🟢 Connected to Parent</div>
+
+  <div class="content" id="content">
+    <h1>Iframe Content with PostMessage</h1>
+
+    <p>
+      This content is rendered inside an iframe. When you highlight text here,
+      the <code>PostMessageAdapter</code> sends the highlight data to the parent window
+      for storage.
+    </p>
+
+    <h2>How PostMessage Works</h2>
+
+    <p>
+      The PostMessage API enables secure cross-origin communication between windows.
+      In this example, the iframe (child) sends highlight operations to the parent window,
+      which stores them and responds back.
+    </p>
+
+    <p>
+      <strong>Save Highlight:</strong> When you create a highlight, the adapter sends a
+      <code>save_highlight</code> message with the highlight data. The parent saves it
+      and responds with confirmation.
+    </p>
+
+    <p>
+      <strong>Load Highlights:</strong> When the iframe loads, it sends a
+      <code>load_highlights</code> message. The parent responds with all stored highlights,
+      which are then rendered on the page.
+    </p>
+
+    <p>
+      <strong>Delete Highlight:</strong> Clicking a highlight sends a
+      <code>remove_highlight</code> message with the highlight ID. The parent removes it
+      from storage.
+    </p>
+
+    <h2>Use Cases</h2>
+
+    <p>
+      This pattern is perfect for browser extensions that inject iframes into web pages,
+      or for applications that display user content in sandboxed iframes while maintaining
+      centralized highlight storage.
+    </p>
+
+    <p>
+      <strong>Try it:</strong> Select any text above to create a highlight. Then use the
+      reload button in the parent window to see your highlights persist!
+    </p>
+  </div>
+
+  <script type="module">
+    // Import Flowmark (adjust path for your setup)
+    // In a real app: import { Highlighter, PostMessageAdapter } from '@spranclabs/flowmark'
+    import { Highlighter, PostMessageAdapter } from '../../dist/index.js'
+
+    console.log('🎨 Initializing Flowmark in iframe...')
+
+    // 1. Create PostMessage adapter targeting parent window
+    const storage = new PostMessageAdapter(
+      window.parent,  // Send messages to parent
+      '*'             // In production, use specific origin: 'https://parent-domain.com'
+    )
+
+    // 2. Initialize highlighter
+    const highlighter = new Highlighter(document.getElementById('content'), {
+      storage: storage,
+      defaultColor: 'rgba(147, 197, 253, 0.4)', // Blue highlight
+      enableCrossElement: true,
+      showSelectionUI: true,
+
+      // Event callbacks
+      onHighlightClick: (highlightId, event) => {
+        if (confirm('Delete this highlight?')) {
+          highlighter.removeHighlight(highlightId)
+            .then(() => console.log('✅ Highlight deleted'))
+            .catch(err => console.error('❌ Delete failed:', err))
+        }
+      },
+
+      onHighlight: (highlight) => {
+        console.log('✅ New highlight created:', highlight.id)
+      },
+
+      onRemove: (highlightId) => {
+        console.log('🗑️ Highlight removed:', highlightId)
+      }
+    })
+
+    // 3. Initialize (loads highlights from parent via PostMessage)
+    try {
+      await highlighter.init()
+      console.log('✅ Flowmark initialized in iframe!')
+      console.log('📝 Select text to create highlights')
+    } catch (error) {
+      console.error('❌ Failed to initialize Flowmark:', error)
+    }
+  </script>
+</body>
+</html>

@@ -1,5 +1,11 @@
 # @spranclabs/flowmark
 
+[![npm version](https://img.shields.io/npm/v/@spranclabs/flowmark.svg?style=flat-square)](https://www.npmjs.com/package/@spranclabs/flowmark)
+[![npm downloads](https://img.shields.io/npm/dm/@spranclabs/flowmark.svg?style=flat-square)](https://www.npmjs.com/package/@spranclabs/flowmark)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Spranc-Labs/flowmark/ci.yml?branch=main&style=flat-square)](https://github.com/Spranc-Labs/flowmark/actions)
+[![codecov](https://img.shields.io/codecov/c/github/Spranc-Labs/flowmark?style=flat-square)](https://codecov.io/gh/Spranc-Labs/flowmark)
+
 **Flowmark** - Zero-dependency highlighting library that flows across boundaries.
 
 > Seamless cross-element text highlighting with smart normalization.
@@ -12,7 +18,7 @@
 - **Tiny bundle size** - ~10KB minified
 - **Framework agnostic** - Works with React, Vue, Angular, or plain HTML
 - **Customizable UI** - Fully customizable highlight colors and styles
-- **Storage adapters** - Support for Chrome, Firefox, and custom storage backends
+- **Storage adapters** - Support for LocalStorage, PostMessage (iframes), or custom backends
 - **Mobile friendly** - Touch selection support
 
 ## Installation
@@ -28,455 +34,222 @@ yarn add @spranclabs/flowmark
 ## Quick Start
 
 ```typescript
-import {
-  normalizeText,
-  computeSimilarity,
-  LocalStorageAdapter,
-  type Highlight,
-  type StoredHighlight
-} from '@spranclabs/flowmark'
+import { Highlighter, LocalStorageAdapter } from '@spranclabs/flowmark'
 
-// Text normalization - handles smart quotes, whitespace, punctuation
-const normalized = normalizeText('"Hello  World"')
-console.log(normalized) // => '"hello world"'
+// 1. Create storage adapter
+const storage = new LocalStorageAdapter('my-highlights')
 
-// Compute similarity between strings (1.0 = identical, 0.0 = completely different)
-const similarity = computeSimilarity('hello world', 'Hello World')
-console.log(similarity) // => 1.0
+// 2. Initialize highlighter
+const highlighter = new Highlighter(document.body, {
+  storage: storage,
+  defaultColor: 'rgba(255, 235, 59, 0.4)',
+  enableCrossElement: true,
+  showSelectionUI: true,
 
-// Storage adapter for persisting highlights
-const storage = new LocalStorageAdapter('my-app-highlights')
-
-// Save a highlight
-const highlight: StoredHighlight = {
-  id: 'highlight_1',
-  text: 'selected text',
-  normalizedText: normalizeText('selected text'),
-  startOffset: 0,
-  endOffset: 13,
-  prefix: 'Some ',
-  suffix: ' here',
-  createdAt: new Date().toISOString(),
-  isCrossElement: false,
-}
-
-await storage.save(highlight)
-
-// Load all highlights
-const highlights = await storage.load()
-console.log(highlights) // => [{ id: 'highlight_1', ... }]
-
-// Update a highlight
-await storage.update('highlight_1', {
-  note: 'This is an important passage'
+  // Event callbacks
+  onHighlightClick: (highlightId, event) => {
+    console.log('Highlight clicked:', highlightId)
+    // Show delete confirmation, etc.
+  },
+  onHighlight: (highlight) => {
+    console.log('New highlight created:', highlight)
+  },
+  onRemove: (highlightId) => {
+    console.log('Highlight removed:', highlightId)
+  }
 })
 
-// Remove a highlight
-await storage.remove('highlight_1')
+// 3. Initialize (loads highlights and sets up event listeners)
+await highlighter.init()
 
-// Clear all highlights
-await storage.clear()
-```
-
-## API Documentation
-
-### Text Processing Functions
-
-#### `normalizeText(text: string, options?: NormalizeOptions): string`
-
-Normalizes text for consistent matching across different text formats.
-
-**Parameters:**
-- `text: string` - The text to normalize
-- `options?: NormalizeOptions` - Optional configuration
-  - `preserveSpacing?: boolean` - Keep original spacing (default: `false`)
-  - `preserveCase?: boolean` - Keep original case (default: `false`)
-
-**Returns:** `string` - Normalized text
-
-**Handles:**
-- Smart quotes → straight quotes (", ')
-- Whitespace normalization (newlines, tabs, multiple spaces → single space)
-- Punctuation spacing standardization
-- Optional case normalization (lowercase)
-
-**Examples:**
-
-```typescript
-import { normalizeText } from '@spranclabs/flowmark'
-
-normalizeText('"Hello  world"')
-// => '"hello world"'
-
-normalizeText('Hello\n\nWorld')
-// => 'hello world'
-
-normalizeText('test,no space')
-// => 'test, no space'
-
-normalizeText('HELLO', { preserveCase: true })
-// => 'HELLO'
+// Now users can select text and create highlights!
 ```
 
 ---
 
-#### `computeSimilarity(str1: string, str2: string): number`
+## Highlighter Class
 
-Computes similarity score between two strings using Levenshtein distance algorithm.
-
-**Parameters:**
-- `str1: string` - First string to compare
-- `str2: string` - Second string to compare
-
-**Returns:** `number` - Similarity score between 0.0 and 1.0
-- `1.0` = Identical strings
-- `0.0` = Completely different strings
-
-**Examples:**
+### Constructor
 
 ```typescript
-import { computeSimilarity } from '@spranclabs/flowmark'
+new Highlighter(container: HTMLElement, config: HighlighterConfig)
+```
 
-computeSimilarity('hello', 'hello')
-// => 1.0
+**Parameters:**
+- `container: HTMLElement` - Container element to enable highlighting within (e.g., `document.body`)
+- `config: HighlighterConfig` - Configuration options (see below)
 
-computeSimilarity('hello', 'hallo')
-// => 0.8
+---
 
-computeSimilarity('hello', 'world')
-// => 0.2
+### Configuration Options
 
-computeSimilarity('', '')
-// => 1.0
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `storage` | `StorageAdapter` | - | **Required.** Storage adapter for persisting highlights |
+| `defaultColor` | `string` | `'rgba(255, 235, 59, 0.4)'` | Default highlight color (CSS color value) |
+| `enableCrossElement` | `boolean` | `true` | Allow text selections across multiple DOM elements |
+| `showSelectionUI` | `boolean` | `true` | Show action toolbar when text is selected |
+| `highlightClassName` | `string` | `'highlight'` | CSS class name applied to highlight `<mark>` elements |
+| `onHighlightClick` | `(id: string, event: MouseEvent) => void` | - | Called when a highlight is clicked |
+| `onHighlight` | `(highlight: Highlight) => void` | - | Called when a new highlight is created |
+| `onRemove` | `(highlightId: string) => void` | - | Called when a highlight is removed |
+| `onUpdate` | `(highlight: Highlight) => void` | - | Called when a highlight is updated |
+| `selectionUI` | `SelectionUIComponent` | - | Custom UI component for selection actions |
+
+**Example with all callbacks:**
+
+```typescript
+const highlighter = new Highlighter(document.body, {
+  storage: new LocalStorageAdapter(),
+  defaultColor: '#fef08a',
+
+  onHighlightClick: (highlightId, event) => {
+    // Handle click (e.g., show delete button, open notes panel)
+    if (confirm('Delete this highlight?')) {
+      highlighter.removeHighlight(highlightId)
+    }
+  },
+
+  onHighlight: (highlight) => {
+    // Handle creation (e.g., analytics, toast notification)
+    console.log('Highlighted:', highlight.text)
+  },
+
+  onRemove: (highlightId) => {
+    // Handle deletion (e.g., update UI, sync to server)
+    console.log('Removed highlight:', highlightId)
+  },
+
+  onUpdate: (highlight) => {
+    // Handle updates (e.g., color change, note added)
+    console.log('Updated highlight:', highlight)
+  }
+})
 ```
 
 ---
 
-#### `getTextContext(range: Range, charsBefore?: number, charsAfter?: number): { prefix: string; suffix: string }`
+### Methods
 
-Extracts text context before and after a DOM Range for validation.
+#### `init(): Promise<void>`
 
-**Parameters:**
-- `range: Range` - DOM Range object
-- `charsBefore?: number` - Characters to extract before the range (default: `32`)
-- `charsAfter?: number` - Characters to extract after the range (default: `32`)
-
-**Returns:** `{ prefix: string; suffix: string }`
-- `prefix` - Text before the range
-- `suffix` - Text after the range
-
-**Examples:**
+Initializes the highlighter by:
+1. Loading existing highlights from storage
+2. Rendering highlights on the page
+3. Setting up event listeners for text selection
 
 ```typescript
-import { getTextContext } from '@spranclabs/flowmark'
+await highlighter.init()
+```
 
+---
+
+#### `createHighlight(range: Range, color?: string): Promise<Highlight>`
+
+Programmatically create a highlight from a DOM Range.
+
+```typescript
 const selection = window.getSelection()
 if (selection && selection.rangeCount > 0) {
   const range = selection.getRangeAt(0)
-  const { prefix, suffix } = getTextContext(range, 32, 32)
-
-  console.log('Before:', prefix)
-  console.log('After:', suffix)
+  const highlight = await highlighter.createHighlight(range, '#86efac')
+  console.log('Created:', highlight)
 }
 ```
 
 ---
 
-#### `extractTextFromRange(range: Range): string`
+#### `removeHighlight(highlightId: string): Promise<void>`
 
-Extracts text content from a DOM Range, properly handling cross-element selections.
-
-**Parameters:**
-- `range: Range` - DOM Range object
-
-**Returns:** `string` - Extracted text with proper spacing
-
-**Examples:**
+Remove a highlight by ID.
 
 ```typescript
-import { extractTextFromRange } from '@spranclabs/flowmark'
-
-const selection = window.getSelection()
-if (selection && selection.rangeCount > 0) {
-  const range = selection.getRangeAt(0)
-  const text = extractTextFromRange(range)
-  console.log('Selected text:', text)
-}
+await highlighter.removeHighlight('highlight_123')
 ```
 
 ---
 
-#### `findTextPosition(haystack: string, needle: string, startOffset?: number): { startOffset: number; endOffset: number } | null`
+#### `destroy(): void`
 
-Finds the position of text within a larger string.
-
-**Parameters:**
-- `haystack: string` - The text to search in
-- `needle: string` - The text to find
-- `startOffset?: number` - Starting offset for search (default: `0`)
-
-**Returns:** `{ startOffset: number; endOffset: number } | null`
-- Returns position object if found
-- Returns `null` if not found
-
-**Examples:**
+Clean up event listeners and remove highlights from DOM. Call this when unmounting the highlighter.
 
 ```typescript
-import { findTextPosition } from '@spranclabs/flowmark'
-
-const text = 'Hello world, hello universe'
-const pos = findTextPosition(text, 'hello', 0)
-console.log(pos)
-// => { startOffset: 0, endOffset: 5 }
-
-const notFound = findTextPosition(text, 'galaxy', 0)
-console.log(notFound)
-// => null
+highlighter.destroy()
 ```
 
 ---
 
-#### `validateTextMatch(text: string, searchText: string, prefix: string, suffix: string): boolean`
+## Storage Adapters
 
-Validates if text matches at a given position with surrounding context.
-
-**Parameters:**
-- `text: string` - The full text to search in
-- `searchText: string` - The text to find
-- `prefix: string` - Expected text before the match
-- `suffix: string` - Expected text after the match
-
-**Returns:** `boolean` - `true` if match is validated with correct context
-
-**Examples:**
-
-```typescript
-import { validateTextMatch } from '@spranclabs/flowmark'
-
-const text = 'The quick brown fox jumps'
-const valid = validateTextMatch(text, 'brown', 'quick ', ' fox')
-console.log(valid)
-// => true
-
-const invalid = validateTextMatch(text, 'brown', 'slow ', ' fox')
-console.log(invalid)
-// => false
-```
+Flowmark uses storage adapters to persist highlights. You can use a built-in adapter or create your own.
 
 ---
 
-### Storage Adapters
+### LocalStorageAdapter (Browser)
 
-All storage adapters implement the `StorageAdapter` interface:
-
-```typescript
-interface StorageAdapter {
-  load(): Promise<StoredHighlight[]>
-  save(highlight: StoredHighlight): Promise<void>
-  update(id: string, data: Partial<StoredHighlight>): Promise<void>
-  remove(id: string): Promise<void>
-  clear(): Promise<void>
-}
-```
-
----
-
-#### `MemoryStorageAdapter`
-
-In-memory storage adapter for testing or temporary storage. Data is lost on page reload.
-
-**Constructor:**
-```typescript
-new MemoryStorageAdapter()
-```
-
-**Methods:**
-- `load(): Promise<StoredHighlight[]>` - Returns all stored highlights
-- `save(highlight: StoredHighlight): Promise<void>` - Saves a highlight
-- `update(id: string, data: Partial<StoredHighlight>): Promise<void>` - Updates a highlight
-- `remove(id: string): Promise<void>` - Removes a highlight
-- `clear(): Promise<void>` - Clears all highlights
-- `size(): number` - Returns count of stored highlights (for testing)
-
-**Usage:**
-
-```typescript
-import { MemoryStorageAdapter } from '@spranclabs/flowmark'
-
-const storage = new MemoryStorageAdapter()
-
-await storage.save({
-  id: '1',
-  text: 'important text',
-  normalizedText: 'important text',
-  startOffset: 0,
-  endOffset: 14,
-  prefix: '',
-  suffix: '',
-  createdAt: new Date().toISOString(),
-  isCrossElement: false,
-})
-
-const highlights = await storage.load()
-console.log(highlights.length) // => 1
-console.log(storage.size()) // => 1
-```
-
----
-
-#### `LocalStorageAdapter`
-
-LocalStorage adapter for persisting highlights in the browser.
-
-**Constructor:**
-```typescript
-new LocalStorageAdapter(storageKey?: string)
-```
-
-**Parameters:**
-- `storageKey?: string` - LocalStorage key (default: `'text-annotator-highlights'`)
-
-**Methods:**
-- `load(): Promise<StoredHighlight[]>` - Loads highlights from localStorage
-- `save(highlight: StoredHighlight): Promise<void>` - Saves a highlight
-- `update(id: string, data: Partial<StoredHighlight>): Promise<void>` - Updates a highlight
-- `remove(id: string): Promise<void>` - Removes a highlight
-- `clear(): Promise<void>` - Removes all highlights
-
-**Usage:**
+Persists highlights in browser localStorage. Data survives page reloads.
 
 ```typescript
 import { LocalStorageAdapter } from '@spranclabs/flowmark'
 
 const storage = new LocalStorageAdapter('my-app-highlights')
-
-// Save a highlight (persists across page reloads)
-await storage.save({
-  id: 'highlight_123',
-  text: 'persistent highlight',
-  normalizedText: 'persistent highlight',
-  startOffset: 0,
-  endOffset: 20,
-  prefix: 'This is a ',
-  suffix: ' that will persist',
-  createdAt: new Date().toISOString(),
-  isCrossElement: false,
-})
-
-// Reload page...
-
-// Load highlights (data persists)
-const highlights = await storage.load()
-console.log(highlights.length) // => 1
-```
-
----
-
-#### `PostMessageAdapter`
-
-PostMessage adapter for iframe communication. Sends highlights to parent window for storage.
-
-**Constructor:**
-```typescript
-new PostMessageAdapter(targetWindow?: Window, targetOrigin?: string)
 ```
 
 **Parameters:**
-- `targetWindow?: Window` - Target window (default: `window.parent`)
-- `targetOrigin?: string` - Target origin for security (default: `'*'`)
+- `storageKey?: string` - LocalStorage key (default: `'text-annotator-highlights'`)
 
-**Methods:**
-- `load(): Promise<StoredHighlight[]>` - Requests highlights from parent
-- `save(highlight: StoredHighlight): Promise<void>` - Sends save request to parent
-- `update(id: string, data: Partial<StoredHighlight>): Promise<void>` - Sends update request
-- `remove(id: string): Promise<void>` - Sends remove request
-- `clear(): Promise<void>` - Sends clear request
-- `destroy(): void` - Cleans up event listeners
+**Use case:** Single-page apps, browser extensions, offline-first apps
 
-**Message Format:**
+---
 
-Messages sent to parent window:
+### PostMessageAdapter (Iframes)
+
+Sends highlight operations to parent window via `postMessage`. Use this when highlighting content in iframes.
+
 ```typescript
-{
-  type: 'text-annotator',
-  action: 'load_highlights' | 'save_highlight' | 'update_highlight' | 'remove_highlight' | 'clear_highlights',
-  requestId: string,
-  data?: any
-}
+import { PostMessageAdapter } from '@spranclabs/flowmark'
+
+const storage = new PostMessageAdapter(window.parent, 'https://parent-domain.com')
 ```
 
-Expected response from parent:
+**Parameters:**
+- `targetWindow?: Window` - Target window to send messages (default: `window.parent`)
+- `targetOrigin?: string` - Target origin for security (default: `'*'`)
+
+**Message protocol:**
 ```typescript
+// Sent from iframe to parent
 {
-  type: 'text-annotator-response',
+  type: 'load_highlights' | 'save_highlight' | 'remove_highlight' | ...,
   requestId: string,
-  success: boolean,
-  data?: any,
+  data: any
+}
+
+// Parent responds with
+{
+  type: '<same-as-request>',
+  requestId: string,
+  data: any,
   error?: string
 }
 ```
 
-**Usage:**
+**Use case:** Highlighting content in iframed web pages, browser extension content scripts
 
-In iframe:
-```typescript
-import { PostMessageAdapter } from '@spranclabs/flowmark'
-
-const storage = new PostMessageAdapter(
-  window.parent,
-  'https://parent-domain.com'
-)
-
-// Send save request to parent
-await storage.save({
-  id: 'highlight_1',
-  text: 'iframe highlight',
-  normalizedText: 'iframe highlight',
-  startOffset: 0,
-  endOffset: 16,
-  prefix: '',
-  suffix: '',
-  createdAt: new Date().toISOString(),
-  isCrossElement: false,
-})
-
-// Clean up when done
-storage.destroy()
-```
-
-In parent window:
+**Parent window handler example:**
 ```typescript
 window.addEventListener('message', async (event) => {
-  if (event.data.type !== 'text-annotator') return
+  if (event.data.type === 'save_highlight') {
+    const { requestId, data } = event.data
 
-  const { action, requestId, data } = event.data
+    // Save to your backend
+    const savedHighlight = await saveToDatabase(data)
 
-  try {
-    let result
-
-    switch (action) {
-      case 'load_highlights':
-        result = await loadHighlightsFromDB()
-        break
-      case 'save_highlight':
-        await saveHighlightToDB(data)
-        result = { success: true }
-        break
-      // ... handle other actions
-    }
-
+    // Respond to iframe
     event.source.postMessage({
-      type: 'text-annotator-response',
+      type: 'save_highlight',
       requestId,
-      success: true,
-      data: result
-    }, event.origin)
-  } catch (error) {
-    event.source.postMessage({
-      type: 'text-annotator-response',
-      requestId,
-      success: false,
-      error: error.message
+      data: savedHighlight
     }, event.origin)
   }
 })
@@ -484,155 +257,141 @@ window.addEventListener('message', async (event) => {
 
 ---
 
-### TypeScript Types
+### MemoryStorageAdapter (Testing)
 
-#### `Highlight`
-
-Represents a text highlight with position and metadata.
-
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `id` | `string` | ✓ | Unique identifier for the highlight |
-| `text` | `string` | ✓ | The highlighted text content |
-| `normalizedText` | `string` | ✓ | Normalized text (used for matching) |
-| `startOffset` | `number` | ✓ | Start character offset in normalized text |
-| `endOffset` | `number` | ✓ | End character offset in normalized text |
-| `prefix` | `string` | ✓ | Text context before highlight (for validation) |
-| `suffix` | `string` | ✓ | Text context after highlight (for validation) |
-| `createdAt` | `Date` | ✓ | Creation timestamp |
-| `isCrossElement` | `boolean` | ✓ | Whether highlight spans multiple DOM elements |
-| `color` | `string` | ✗ | Highlight color (hex, rgb, or color name) |
-| `note` | `string` | ✗ | Optional note attached to highlight |
-| `updatedAt` | `Date` | ✗ | Last update timestamp |
-
----
-
-#### `StoredHighlight`
-
-Serializable highlight format for storage (uses ISO date strings instead of Date objects).
-
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `id` | `string` | ✓ | Unique identifier |
-| `text` | `string` | ✓ | Highlighted text |
-| `normalizedText` | `string` | ✓ | Normalized text |
-| `startOffset` | `number` | ✓ | Start offset |
-| `endOffset` | `number` | ✓ | End offset |
-| `prefix` | `string` | ✓ | Text before highlight |
-| `suffix` | `string` | ✓ | Text after highlight |
-| `createdAt` | `string` | ✓ | ISO date string |
-| `isCrossElement` | `boolean` | ✓ | Cross-element flag |
-| `color` | `string` | ✗ | Highlight color |
-| `note` | `string` | ✗ | Optional note |
-| `updatedAt` | `string` | ✗ | ISO date string |
-
----
-
-#### `CreateHighlightInput`
-
-Data required to create a new highlight.
-
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `text` | `string` | ✓ | Selected text |
-| `startOffset` | `number` | ✓ | Start offset in normalized text |
-| `endOffset` | `number` | ✓ | End offset in normalized text |
-| `prefix` | `string` | ✓ | Text context before selection |
-| `suffix` | `string` | ✓ | Text context after selection |
-| `isCrossElement` | `boolean` | ✓ | Whether spans multiple elements |
-| `color` | `string` | ✗ | Highlight color |
-| `note` | `string` | ✗ | Optional note |
-
----
-
-#### `SelectionData`
-
-Selection data from browser Selection API.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `text` | `string` | Selected text |
-| `normalizedText` | `string` | Normalized text |
-| `range` | `Range` | Selection Range object |
-| `startContainer` | `Node` | Start container node |
-| `endContainer` | `Node` | End container node |
-| `startOffset` | `number` | Start offset within container |
-| `endOffset` | `number` | End offset within container |
-| `isCrossElement` | `boolean` | Whether selection spans multiple elements |
-
----
-
-#### `NormalizeOptions`
-
-Text normalization configuration.
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `preserveSpacing` | `boolean` | `false` | Keep original spacing |
-| `preserveCase` | `boolean` | `false` | Keep original case |
-
----
-
-#### `TextMatch`
-
-Text match result with position information.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `startOffset` | `number` | Start offset in document |
-| `endOffset` | `number` | End offset in document |
-| `text` | `string` | Matched text |
-| `confidence` | `number` | Confidence score (0-1) |
-| `validated` | `boolean` | Whether prefix/suffix validated |
-
----
-
-#### `StorageAdapter`
-
-Storage adapter interface that all adapters must implement.
+In-memory storage for testing. Data is lost on page reload.
 
 ```typescript
-interface StorageAdapter {
-  load(): Promise<StoredHighlight[]>
-  save(highlight: StoredHighlight): Promise<void>
-  update(id: string, data: Partial<StoredHighlight>): Promise<void>
-  remove(id: string): Promise<void>
-  clear(): Promise<void>
+import { MemoryStorageAdapter } from '@spranclabs/flowmark'
+
+const storage = new MemoryStorageAdapter()
+```
+
+**Use case:** Unit tests, demos, temporary highlighting
+
+---
+
+### Custom Adapter
+
+Create a custom adapter by implementing the `StorageAdapter` interface:
+
+```typescript
+import { StorageAdapter, StoredHighlight } from '@spranclabs/flowmark'
+
+class MyCustomAdapter implements StorageAdapter {
+  async load(): Promise<StoredHighlight[]> {
+    const response = await fetch('/api/highlights')
+    return response.json()
+  }
+
+  async save(highlight: StoredHighlight): Promise<void> {
+    await fetch('/api/highlights', {
+      method: 'POST',
+      body: JSON.stringify(highlight)
+    })
+  }
+
+  async update(id: string, data: Partial<StoredHighlight>): Promise<void> {
+    await fetch(`/api/highlights/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    })
+  }
+
+  async remove(id: string): Promise<void> {
+    await fetch(`/api/highlights/${id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async clear(): Promise<void> {
+    await fetch('/api/highlights', {
+      method: 'DELETE'
+    })
+  }
 }
+
+const storage = new MyCustomAdapter()
 ```
 
 ---
 
-### Exports Summary
+## TypeScript
 
-**Functions (6):**
-- `normalizeText()` - Text normalization
-- `computeSimilarity()` - String similarity scoring
-- `getTextContext()` - Extract prefix/suffix context
-- `extractTextFromRange()` - DOM Range text extraction
-- `findTextPosition()` - Find text offsets
-- `validateTextMatch()` - Context-aware validation
+Flowmark is written in TypeScript. All types are exported:
 
-**Classes (3):**
-- `MemoryStorageAdapter` - In-memory storage
-- `LocalStorageAdapter` - Browser localStorage
-- `PostMessageAdapter` - Iframe communication
+```typescript
+import type {
+  Highlight,           // Highlight with Date objects
+  StoredHighlight,     // Serializable highlight (with ISO date strings)
+  HighlighterConfig,   // Configuration options
+  StorageAdapter,      // Storage interface
+  SelectionData,       // Browser selection data
+  CreateHighlightInput // Input for creating highlights
+} from '@spranclabs/flowmark'
+```
 
-**Types (11):**
-- `Highlight` - Highlight with Date objects
-- `StoredHighlight` - Serializable highlight
-- `CreateHighlightInput` - Create highlight data
-- `SelectionData` - Browser selection data
-- `NormalizeOptions` - Text normalization config
-- `TextMatch` - Text match result
-- `TextNode` - DOM text node
-- `HighlightElement` - Rendered highlight
-- `StorageAdapter` - Storage interface
-- `HighlighterConfig` - Highlighter configuration
-- `SelectionUIComponent` - UI component interface
+See [`src/types.ts`](./src/types.ts) for full type definitions.
 
-**Constants (1):**
-- `VERSION` - Package version string
+---
+
+## Advanced Usage
+
+For advanced use cases, Flowmark exports low-level utilities:
+
+**Text processing:**
+- `normalizeText(text, options?)` - Normalize text for consistent matching
+- `computeSimilarity(str1, str2)` - Compute similarity score (0-1)
+- `getTextContext(range, before?, after?)` - Extract text context around a range
+
+**DOM manipulation:**
+- `renderHighlightMarks(range, id, options)` - Render highlight marks in DOM
+- `unwrapHighlight(container, highlightId)` - Remove highlight marks
+- `getHighlightElements(container, highlightId)` - Get all `<mark>` elements for a highlight
+- `updateHighlightColor(container, highlightId, color)` - Change highlight color
+
+**Selection handling:**
+- `captureSelection()` - Get current browser selection as `SelectionData`
+- `validateSelection(selection)` - Validate selection is suitable for highlighting
+- `clearSelection()` - Clear browser selection
+
+**Highlight restoration:**
+- `restoreHighlight(container, highlight)` - Restore a highlight to the DOM
+- `restoreHighlights(container, highlights)` - Restore multiple highlights
+
+For detailed documentation on these utilities, see [`src/`](./src/) directory.
+
+---
+
+## Styling Highlights
+
+Flowmark renders highlights as `<mark>` elements with inline `background-color` styles. You can customize the appearance with CSS:
+
+```css
+/* Basic styling */
+mark.highlight {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+mark.highlight:hover {
+  opacity: 0.8;
+}
+
+/* Custom class for specific highlights */
+mark.my-custom-class {
+  background-color: #fef08a;
+  border-bottom: 2px solid #fbbf24;
+}
+```
+
+Pass custom class via config:
+```typescript
+const highlighter = new Highlighter(document.body, {
+  highlightClassName: 'my-custom-class',
+  // ...
+})
+```
 
 ---
 
@@ -642,6 +401,22 @@ interface StorageAdapter {
 - Firefox 88+
 - Safari 14+
 
+---
+
 ## License
 
-MIT
+MIT © [Spranc Labs](https://github.com/spranc-labs)
+
+---
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+---
+
+## Links
+
+- **GitHub:** [github.com/spranc-labs/flowmark](https://github.com/spranc-labs/flowmark)
+- **npm:** [npmjs.com/package/@spranclabs/flowmark](https://www.npmjs.com/package/@spranclabs/flowmark)
+- **Issues:** [github.com/spranc-labs/flowmark/issues](https://github.com/spranc-labs/flowmark/issues)

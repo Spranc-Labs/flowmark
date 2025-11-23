@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flowmark - Iframe Parent Window</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f3f4f6;
+    }
+
+    h1 {
+      color: #2563eb;
+      margin: 0 0 20px 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .info {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .iframe-container {
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    iframe {
+      width: 100%;
+      height: 600px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+    }
+
+    .highlight-log {
+      background: #1f2937;
+      color: #10b981;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .highlight-log div {
+      margin: 2px 0;
+    }
+
+    button {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 Flowmark - Iframe PostMessage Example (Parent)</h1>
+
+    <div class="info">
+      <h2>How it works:</h2>
+      <ul>
+        <li>The iframe below uses <code>PostMessageAdapter</code> to communicate with this parent window</li>
+        <li>When you highlight text in the iframe, it sends a message to save the highlight</li>
+        <li>This parent window stores highlights in memory and responds back to the iframe</li>
+        <li>Highlights persist across iframe reloads (but not page reloads in this example)</li>
+      </ul>
+      <p><strong>Try it:</strong> Highlight text in the iframe below, then click the reload button to see highlights restored!</p>
+    </div>
+
+    <div class="iframe-container">
+      <iframe id="contentFrame" src="child.html"></iframe>
+      <button id="reloadBtn">🔄 Reload Iframe</button>
+      <button id="clearBtn">🗑️ Clear All Highlights</button>
+    </div>
+
+    <div class="info">
+      <h3>Activity Log:</h3>
+      <div class="highlight-log" id="log"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // In-memory storage for highlights (in production, this would be a database)
+    const highlights = new Map()
+
+    // Log function
+    function log(message, data) {
+      const logEl = document.getElementById('log')
+      const timestamp = new Date().toLocaleTimeString()
+      const logEntry = document.createElement('div')
+      logEntry.textContent = `[${timestamp}] ${message} ${data ? JSON.stringify(data) : ''}`
+      logEl.appendChild(logEntry)
+      logEl.scrollTop = logEl.scrollHeight
+    }
+
+    // Handle messages from iframe
+    window.addEventListener('message', async (event) => {
+      // Security: In production, verify event.origin
+      // if (event.origin !== 'https://expected-origin.com') return
+
+      const { type, requestId, data } = event.data
+
+      log(`📨 Received: ${type}`, { requestId })
+
+      let response = {
+        type,
+        requestId,
+        data: null,
+        error: null
+      }
+
+      try {
+        switch (type) {
+          case 'load_highlights':
+            // Return all highlights as array
+            response.data = Array.from(highlights.values())
+            log('✅ Loaded highlights', { count: highlights.size })
+            break
+
+          case 'save_highlight':
+            // Save new highlight
+            highlights.set(data.id, data)
+            response.data = data
+            log('✅ Saved highlight', { id: data.id })
+            break
+
+          case 'update_highlight':
+            // Update existing highlight
+            if (highlights.has(data.id)) {
+              const existing = highlights.get(data.id)
+              highlights.set(data.id, { ...existing, ...data })
+              response.data = highlights.get(data.id)
+              log('✅ Updated highlight', { id: data.id })
+            } else {
+              response.error = 'Highlight not found'
+              log('❌ Update failed: not found', { id: data.id })
+            }
+            break
+
+          case 'remove_highlight':
+            // Remove highlight
+            const deleted = highlights.delete(data.id)
+            response.data = { success: deleted }
+            log('✅ Removed highlight', { id: data.id })
+            break
+
+          case 'clear_highlights':
+            // Clear all highlights
+            highlights.clear()
+            response.data = { success: true }
+            log('✅ Cleared all highlights')
+            break
+
+          default:
+            response.error = `Unknown message type: ${type}`
+            log('❌ Unknown message type', { type })
+        }
+      } catch (error) {
+        response.error = error.message
+        log('❌ Error processing message', { error: error.message })
+      }
+
+      // Send response back to iframe
+      event.source.postMessage(response, event.origin)
+    })
+
+    // Reload iframe button
+    document.getElementById('reloadBtn').addEventListener('click', () => {
+      const iframe = document.getElementById('contentFrame')
+      iframe.src = iframe.src // Reload
+      log('🔄 Iframe reloaded')
+    })
+
+    // Clear all button
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (confirm('Clear all highlights?')) {
+        highlights.clear()
+        const iframe = document.getElementById('contentFrame')
+        iframe.src = iframe.src // Reload to show cleared state
+        log('🗑️ All highlights cleared and iframe reloaded')
+      }
+    })
+
+    log('🚀 Parent window ready')
+  </script>
+</body>
+</html>

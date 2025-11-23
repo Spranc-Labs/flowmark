@@ -1,0 +1,53 @@
+# Source files (only dist/ should be published)
+src/
+*.ts
+!*.d.ts
+
+# Tests
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__/
+__mocks__/
+coverage/
+
+# Config files
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+.eslintrc*
+.prettierrc*
+biome.json
+
+# Development files
+node_modules/
+.DS_Store
+*.log
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+
+# Editor
+.vscode/
+.idea/
+*.sublime-*
+
+# Misc
+examples/
+docs/
+*.md
+!README.md
+!LICENSE
+!CHANGELOG.md
