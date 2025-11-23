@@ -1,5 +1,10 @@
 # Flowmark
 
+[![npm version](https://img.shields.io/npm/v/@spranclabs/flowmark.svg?style=flat-square)](https://www.npmjs.com/package/@spranclabs/flowmark)
+[![npm downloads](https://img.shields.io/npm/dm/@spranclabs/flowmark.svg?style=flat-square)](https://www.npmjs.com/package/@spranclabs/flowmark)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Spranc-Labs/flowmark/ci.yml?branch=main&style=flat-square)](https://github.com/Spranc-Labs/flowmark/actions)
+
 **Highlighting that flows across boundaries** - A zero-dependency, cross-browser library for seamless text highlighting with cross-element support.
 
 > Built by [Spranc Labs](https://github.com/spranc-labs) for modern web applications
@@ -28,6 +33,8 @@ This is a monorepo containing multiple packages:
 ```bash
 npm install @spranclabs/flowmark
 ```
+
+**📦 Live on npm:** [npmjs.com/package/@spranclabs/flowmark](https://www.npmjs.com/package/@spranclabs/flowmark)
 
 The core Flowmark library with text processing, highlighting, and storage adapters.
 
@@ -155,7 +162,7 @@ Contributions welcome! This is an open-source portfolio project.
 ## Links
 
 - **Documentation**: Coming soon
-- **NPM Package**: `@spranclabs/flowmark` (coming soon)
+- **NPM Package**: [@spranclabs/flowmark](https://www.npmjs.com/package/@spranclabs/flowmark)
 - **GitHub**: [Spranc-Labs/flowmark](https://github.com/Spranc-Labs/flowmark)
 - **Spranc Labs**: [github.com/Spranc-Labs](https://github.com/Spranc-Labs)
 
@@ -168,10 +175,10 @@ Contributions welcome! This is an open-source portfolio project.
 - [x] TypeScript types and definitions
 - [x] Unit tests (40 tests, 100% coverage)
 - [x] **Interactive static demo with full feature showcase** 🎬
+- [x] npm publishing ✅
 - [ ] Chrome extension adapter
 - [ ] Firefox extension adapter
 - [ ] Full documentation site
-- [ ] npm publishing
 - [ ] Chrome Web Store release
 - [ ] Firefox Add-ons release
 
